@@ -1,0 +1,17 @@
+{
+  "name": "muffin-serverless-terraform",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.159",
+    "esbuild": "^0.27.2",
+    "typescript": "^5.9.3"
+  }
+}
