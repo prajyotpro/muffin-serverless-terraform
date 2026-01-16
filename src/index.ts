@@ -1,42 +1,59 @@
-import { APIGatewayProxyEvent, APIGatewayTokenAuthorizerEvent, APIGatewayProxyResult, APIGatewayAuthorizerResult } from 'aws-lambda';
+import { APIGatewayProxyEvent, SQSEvent, APIGatewayAuthorizerResult, APIGatewayTokenAuthorizerEvent } from 'aws-lambda';
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 
-export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  console.log("Event:", JSON.stringify(event, null, 2));
+const sqs = new SQSClient({ region: "us-east-1" });
 
-  return {
-    statusCode: 200,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: "Hello from muffin-serverless-terraform!",
-      path: event.path
-    }),
-  };
-};
-
-export const secureHandler = async (event: APIGatewayProxyEvent) => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ message: "I am SECRET! You have the correct token." }),
-  };
-};
-
+// --- 1. AUTHORIZER (Unchanged) ---
 export const authHandler = async (event: APIGatewayTokenAuthorizerEvent): Promise<APIGatewayAuthorizerResult> => {
-  const token = event.authorizationToken; 
-
-  // Simple Logic: Check if the header "Authorization" equals "my-secret-token"
-  // In reality, you would validate a JWT or check a database here.
-  const isAllowed = token === 'my-secret-token';
-  const effect = isAllowed ? 'Allow' : 'Deny';
-
+  const token = event.authorizationToken;
+  const effect = token === 'my-secret-token' ? 'Allow' : 'Deny';
   return {
     principalId: 'user',
     policyDocument: {
       Version: '2012-10-17',
-      Statement: [{
-        Action: 'execute-api:Invoke',
-        Effect: effect,
-        Resource: event.methodArn, // Allow/Deny access to the requested API resource
-      }],
+      Statement: [{ Action: 'execute-api:Invoke', Effect: effect, Resource: event.methodArn }],
     },
   };
+};
+
+// --- 2. PRODUCER (The API Handler) ---
+// Validates input -> Sends to SQS -> Returns 200 OK immediately
+export const producerHandler = async (event: APIGatewayProxyEvent) => {
+  try {
+    const queueUrl = process.env.QUEUE_URL; // We will set this in Terraform
+    const body = event.body || "{}";
+    
+    // Send to SQS
+    await sqs.send(new SendMessageCommand({
+      QueueUrl: queueUrl,
+      MessageBody: body,
+    }));
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ 
+        message: "Request received! We are processing it in the background.",
+        status: "queued" 
+      }),
+    };
+  } catch (error) {
+    console.error("Error sending to SQS:", error);
+    return { statusCode: 500, body: JSON.stringify({ error: "Failed to queue message" }) };
+  }
+};
+
+// --- 3. CONSUMER (The Background Worker) ---
+// Triggered by SQS -> Processes message -> Deletes from Queue (automatically)
+export const consumerHandler = async (event: SQSEvent) => {
+  for (const record of event.Records) {
+    const payload = record.body;
+    
+    // Simulate heavy work (e.g., Image processing, DB write)
+    console.log(`[WORKER] Processing message ID: ${record.messageId}`);
+    console.log(`[WORKER] Payload: ${payload}`);
+    
+    // If you throw an error here, SQS will retry later.
+    // If you return successfully, SQS deletes the message.
+    await new Promise(resolve => setTimeout(resolve, 1000)); 
+  }
 };
