@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -11,7 +11,11 @@
   "description": "",
   "devDependencies": {
     "@types/aws-lambda": "^8.10.159",
+    "@types/node": "^25.0.9",
     "esbuild": "^0.27.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.970.0"
   }
 }
