@@ -28,19 +28,6 @@ data "archive_file" "lambda_zip" {
   depends_on  = [null_resource.build_lambda]
 }
 
-# --- 2. SQS QUEUE 
-resource "aws_sqs_queue" "task_queue_one" {
-  name                      = "my-task-queue-one"
-  message_retention_seconds = 86400 # 1 day
-  visibility_timeout_seconds = 30   # How long a worker has to finish before retry
-}
-
-resource "aws_sqs_queue" "task_queue_two" {
-  name                      = "my-task-queue-two"
-  message_retention_seconds = 86400 # 1 day
-  visibility_timeout_seconds = 30   # How long a worker has to finish before retry
-}
-
 # --- 3. IAM ROLE & PERMISSIONS ---
 resource "aws_iam_role" "lambda_exec" {
   name = "sqs_lambda_role"
@@ -58,38 +45,6 @@ resource "aws_iam_role" "lambda_exec" {
 resource "aws_iam_role_policy_attachment" "lambda_basic" {
   role       = aws_iam_role.lambda_exec.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-
-# SQS Permission (Allow Lambdas to Send and Receive)
-resource "aws_iam_role_policy" "sqs_policy" {
-  name = "lambda_sqs_policy"
-  role = aws_iam_role.lambda_exec.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "sqs:SendMessage",
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes"
-        ]
-        Resource = aws_sqs_queue.task_queue_one.arn
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "sqs:SendMessage",
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes"
-        ]
-        Resource = aws_sqs_queue.task_queue_two.arn
-      }
-    ]
-  })
 }
 
 # --- 4. LAMBDA FUNCTIONS ---
@@ -112,14 +67,6 @@ resource "aws_lambda_function" "producer" {
   handler       = "functions/producer.handler"
   runtime       = "nodejs20.x"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-
-  # We pass the Queue URL as an environment variable so code knows where to send messages
-  environment {
-    variables = {
-      QUEUE_ONE_URL = aws_sqs_queue.task_queue_one.id
-      QUEUE_TWO_URL = aws_sqs_queue.task_queue_two.id
-    }
-  }
 }
 
 # Function C: CONSUMER ONE (The Worker)

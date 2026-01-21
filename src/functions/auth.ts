@@ -1,7 +1,9 @@
 import { APIGatewayAuthorizerResult, APIGatewayTokenAuthorizerEvent } from 'aws-lambda';
 
 // --- 1. AUTHORIZER (Unchanged) ---
-export const handler = async (event: APIGatewayTokenAuthorizerEvent): Promise<APIGatewayAuthorizerResult> => {
+export const handler = async (
+  event: APIGatewayTokenAuthorizerEvent,
+): Promise<APIGatewayAuthorizerResult> => {
   const token = event.authorizationToken;
   const effect = token === 'my-secret-token' ? 'Allow' : 'Deny';
   return {

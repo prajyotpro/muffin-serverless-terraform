@@ -4,7 +4,16 @@
     "module": "commonjs",
     "outDir": "./dist",
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@services/*": ["src/services/*"],
+      "@src/*": ["src/*"],
+      "@core/*": ["core/*"] 
+    }
+  },
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
   },
   "include": ["src/**/*"]
 }
