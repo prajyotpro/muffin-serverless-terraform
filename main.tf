@@ -57,17 +57,6 @@ resource "aws_iam_role_policy_attachment" "lambda_policy" {
 # ---------------------------------------------------------------------------
 # 3. Lambda Functions (Split into 3)
 # ---------------------------------------------------------------------------
-
-# Public Function
-resource "aws_lambda_function" "public_hello" {
-  function_name = "public-hello"
-  filename      = data.archive_file.lambda_zip.output_path
-  role          = aws_iam_role.lambda_exec.arn
-  handler       = "index.handler" 
-  runtime       = "nodejs20.x"
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-}
-
 # Secure Function
 resource "aws_lambda_function" "secure_hello" {
   function_name = "secure-hello"
@@ -83,7 +72,7 @@ resource "aws_lambda_function" "authorizer" {
   function_name = "api-authorizer"
   filename      = data.archive_file.lambda_zip.output_path
   role          = aws_iam_role.lambda_exec.arn
-  handler       = "index.authHandler" # Looks for authHandler export
+  handler       = "functions/auth.handler"
   runtime       = "nodejs20.x"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 }
@@ -194,15 +183,6 @@ resource "aws_api_gateway_stage" "prod" {
 # ---------------------------------------------------------------------------
 # 6. Permissions (Allow API Gateway to Invoke Lambdas)
 # ---------------------------------------------------------------------------
-
-resource "aws_lambda_permission" "allow_public" {
-  statement_id  = "AllowPublic"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.public_hello.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.edge_api.execution_arn}/*/*"
-}
-
 resource "aws_lambda_permission" "allow_secure" {
   statement_id  = "AllowSecure"
   action        = "lambda:InvokeFunction"
