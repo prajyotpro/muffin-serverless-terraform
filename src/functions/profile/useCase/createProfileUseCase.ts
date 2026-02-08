@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent } from 'aws-lambda/trigger/api-gateway-proxy';
 
-export class UpdateHelloUseCase {
+export class CreateProfileUseCase {
   private event: APIGatewayProxyEvent;
 
   constructor(event: APIGatewayProxyEvent) {
@@ -12,7 +12,7 @@ export class UpdateHelloUseCase {
       return {
         statusCode: 200,
         body: JSON.stringify({
-          message: 'Hello update.',
+          message: 'Hello created.',
         }),
       };
     } catch (error) {

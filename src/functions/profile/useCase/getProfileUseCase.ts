@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent } from 'aws-lambda/trigger/api-gateway-proxy';
 import { MyService } from '@services/myService';
 
-export class GetHelloUseCase {
+export class GetProfileUseCase {
   private event: APIGatewayProxyEvent;
 
   constructor(event: APIGatewayProxyEvent) {
@@ -26,7 +26,7 @@ export class GetHelloUseCase {
   }
 }
 
-export class GetHelloByIdUseCase {
+export class GetProfileByIdUseCase {
   private event: APIGatewayProxyEvent;
 
   constructor(event: APIGatewayProxyEvent) {

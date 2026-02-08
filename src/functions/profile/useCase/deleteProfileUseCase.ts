@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent } from 'aws-lambda/trigger/api-gateway-proxy';
 
-export class DeleteHelloUseCase {
+export class DeleteProfileUseCase {
   private event: APIGatewayProxyEvent;
 
   constructor(event: APIGatewayProxyEvent) {

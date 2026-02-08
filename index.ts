@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayTokenAuthorizerEvent } from 'aws-lambda';
 import { handler as authHandler } from './src/functions/auth';
 import { MuffinServerlessRouter } from './core/router';
-import { getHello, createHello, deleteHello, updateHello, getHelloById } from './src/functions/hello/index';
+import { getProfile, getProfileById, createProfile, updateProfile, deleteProfile } from './src/functions/profile/index';
 
 const app = new MuffinServerlessRouter();
 
@@ -19,26 +19,29 @@ const Auth = async (event: APIGatewayProxyEvent) => {
     }  
 };
 
-// Hello Module Routes
-app.get('/hello', Auth, async (event: APIGatewayProxyEvent) => {
-  return getHello(event);
-});
+/**
+ * A Higher-Order Function that wraps service calls.
+ * This keeps the routing table clean and provides a central spot for error handling.
+ */
+const wrap = (fn: (event: APIGatewayProxyEvent) => Promise<any>) => 
+  async (event: APIGatewayProxyEvent) => {
+    try {
+      return await fn(event);
+    } catch (error) {
+      console.error(error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: 'Internal Server Error' })
+      };
+    }
+};
 
-app.get('/hello/:id', Auth, async (event: APIGatewayProxyEvent) => {
-  return getHelloById(event);
-});
-
-app.post('/hello', Auth, async (event: APIGatewayProxyEvent) => {
-  return createHello(event);
-});
-
-app.delete('/hello', Auth, async (event: APIGatewayProxyEvent) => {
-  return deleteHello(event);
-});
-
-app.put('/hello', Auth, async (event: APIGatewayProxyEvent) => {
-  return updateHello(event);
-});
+// Profile Module Routes
+app.get('/profile', Auth, wrap(getProfile));
+app.get('/profile/:id', Auth, wrap(getProfileById));
+app.post('/profile', Auth, wrap(createProfile));
+app.put('/profile', Auth, wrap(updateProfile));
+app.delete('/profile', Auth, wrap(deleteProfile));
 
 
 const handler = (event: APIGatewayProxyEvent) => app.handle(event);
